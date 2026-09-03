@@ -1,0 +1,62 @@
+{
+  "name": "pebble-tiny-maker-app",
+  "author": "Brooman Inks",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "pebble": {
+    "displayName": "TinyMaker Monitor",
+    "uuid": "c73777e8-205e-4d23-9d93-aef3b821e0e5",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "capabilities": [
+      "configurable"
+    ],
+    "messageKeys": [
+      "PHASE",
+      "CURRENT_LAYER",
+      "TOTAL_LAYERS",
+      "PERCENT_COMPLETE",
+      "TIME_REMAINING_SEC",
+      "ELAPSED_SEC",
+      "FINISH_EPOCH",
+      "RESIN_USED_ML",
+      "RESIN_LEFT_ML",
+      "RESIN_LEFT_PCT",
+      "LOW_RESIN_FLAG",
+      "PRINT_NAME",
+      "LAST_UPDATE_EPOCH",
+      "EVENT",
+      "CONN_STATE",
+      "CONN_MSG",
+      "REQUEST_REFRESH"
+    ],
+    "resources": {
+      "media": [
+        {
+          "menuIcon": true,
+          "type": "png",
+          "name": "MENU_ICON",
+          "file": "images/menu_icon.png"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@rebble/clay": "^1.1.0"
+  }
+}

@@ -1,0 +1,126 @@
+[
+  {
+    "type": "heading",
+    "defaultValue": "TinyMaker Print Monitor"
+  },
+  {
+    "type": "text",
+    "defaultValue": "Your phone does the networking - the watch just displays what it sends. The phone must be able to reach your MQTT broker, or be on the same WiFi as the printer for the dashboard fallback."
+  },
+  {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "Data source" },
+      {
+        "type": "select",
+        "messageKey": "source",
+        "label": "Source",
+        "defaultValue": "auto",
+        "options": [
+          { "label": "Auto (MQTT, fall back to dashboard)", "value": "auto" },
+          { "label": "MQTT only", "value": "mqtt" },
+          { "label": "Dashboard polling only", "value": "dashboard" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "MQTT (recommended)" },
+      {
+        "type": "text",
+        "defaultValue": "Broker WebSocket URL, e.g. ws://192.168.0.10:9001 - this is the broker's WebSocket listener, not its 1883 TCP port."
+      },
+      {
+        "type": "input",
+        "messageKey": "mqttUrl",
+        "label": "Broker WebSocket URL",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false", "placeholder": "ws://192.168.0.10:9001" }
+      },
+      {
+        "type": "input",
+        "messageKey": "mqttUser",
+        "label": "Username (optional)",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false" }
+      },
+      {
+        "type": "input",
+        "messageKey": "mqttPass",
+        "label": "Password (optional)",
+        "attributes": { "type": "password" }
+      },
+      {
+        "type": "input",
+        "messageKey": "mqttPrefix",
+        "label": "HA discovery prefix",
+        "defaultValue": "homeassistant",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false" }
+      },
+      {
+        "type": "input",
+        "messageKey": "mqttTopic",
+        "label": "Status topic override (optional)",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false", "placeholder": "tinymaker/status" }
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "Dashboard fallback" },
+      {
+        "type": "text",
+        "defaultValue": "Unofficial and LAN-only. The app probes a handful of likely status endpoints and keeps whichever answers with usable JSON; set the path yourself if you already captured it in devtools."
+      },
+      {
+        "type": "input",
+        "messageKey": "dashHost",
+        "label": "Printer host",
+        "defaultValue": "tinymaker.local",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false" }
+      },
+      {
+        "type": "input",
+        "messageKey": "dashPath",
+        "label": "Status path (optional)",
+        "attributes": { "type": "text", "autocapitalize": "none", "autocorrect": "off", "spellcheck": "false", "placeholder": "/status" }
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      { "type": "heading", "defaultValue": "Update cadence" },
+      {
+        "type": "select",
+        "messageKey": "activeInterval",
+        "label": "While printing",
+        "defaultValue": "20",
+        "options": [
+          { "label": "Every 15 seconds", "value": "15" },
+          { "label": "Every 20 seconds", "value": "20" },
+          { "label": "Every 30 seconds", "value": "30" }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "idleInterval",
+        "label": "While idle",
+        "defaultValue": "180",
+        "options": [
+          { "label": "Every 2 minutes", "value": "120" },
+          { "label": "Every 3 minutes", "value": "180" },
+          { "label": "Every 5 minutes", "value": "300" }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "vibrate",
+        "label": "Vibrate on print events",
+        "defaultValue": true
+      }
+    ]
+  },
+  { "type": "submit", "defaultValue": "Save Settings" }
+]
