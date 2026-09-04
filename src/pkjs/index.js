@@ -13,7 +13,7 @@
  */
 
 var Clay = require('@rebble/clay');
-var clayConfig = require('../../config.json');
+var clayConfig = require('./config.json');
 var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
 
 var normalize = require('./normalize');
