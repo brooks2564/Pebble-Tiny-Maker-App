@@ -1,135 +1,98 @@
-# TinyMaker Print Monitor
+<img src="banner_720x320.png" alt="TinyMaker Print Monitor" width="100%">
 
-A Pebble watchapp that watches an active print on a **TinyMaker** resin printer
-running the [TinyMakerWifi](https://github.com/slibbinas/TinyMakerWifi) community
-firmware — layer counter, progress, time remaining, resin level — updated live
-over WiFi, with a vibe when the print finishes, stalls on low resin, is
-cancelled, or needs power-loss recovery.
+Watch a print on your **TinyMaker** resin printer from your wrist. Layer count,
+time left, resin level — live, on any Pebble.
 
-Built to [`docs/PLAN.md`](docs/PLAN.md). The printer API was reverse-engineered
-against a live print; findings are in [`docs/API-NOTES.md`](docs/API-NOTES.md).
+Requires the [TinyMakerWifi](https://github.com/slibbinas/TinyMakerWifi)
+community firmware.
 
 | Status | Resin |
 |---|---|
 | ![Status page](screenshot_emery.png) | ![Resin page](screenshot_emery_resin.png) |
 
-*Live data from a real print, on Pebble Time 2 (emery).*
+## What it does
 
-## How it works
+**Status page**
+- Current print phase — Curing, Lifting, Peeling, Paused, Idle, Finished
+- Layer counter, e.g. `142 / 860`
+- Progress bar and percentage
+- Time remaining, plus the clock time it'll finish
+- Freshness dot: white when data is current, red once it's more than 50 s stale
 
-Pebble hardware has no WiFi radio, so the watch is purely a display:
+**Resin page**
+- Resin left as a percentage of the VAT, and in millilitres
+- `LOW RESIN` banner when the printer raises its low-resin flag
+- Print name and elapsed time
 
-```
-Printer  ──HTTP/MQTT──▶  Phone (PebbleKit JS)  ──AppMessage──▶  Watch (C)
-```
+**Alerts** — distinct vibration patterns for print finished, low-resin pause,
+print cancelled, and power-loss recovery. A finished print shows a summary card
+with total time and resin used; a low-resin pause jumps straight to the resin
+page. *(These only fire while the app is open — see [Limitations](#limitations).)*
 
-The phone-side bridge normalises whatever the printer reports into one fixed
-schema, rate-limits it, and pushes it to the watch. The watch never talks to the
-printer, and never sends it commands — this app is read-only.
+**Controls** — every touch gesture has a button equivalent, so it behaves the
+same on watches without a touchscreen:
 
-## Screens
-
-**Status** — print phase (Curing / Lifting / Peeling / Paused …), current layer
-over total, an orange progress bar, percent, time remaining and the estimated
-finish clock time.
-
-**Resin** — resin left as a percentage of the VAT and in millilitres, a
-low-resin banner when the firmware raises the flag, the print name and elapsed
-time.
-
-### Controls
-
-| Action | Button | Touch (Emery / Gabbro) |
+| | Button | Touch |
 |---|---|---|
 | Switch page | Up / Down | Swipe left or right |
-| Force a refresh now | Select | Tap the progress bar |
-| Show "last updated" | — | Tap the dot in the header |
+| Refresh now | Select | Tap the progress bar |
+| Show "last updated" | — | Tap the header dot |
 | Exit | Back | — |
 
-Every touch gesture has a button equivalent, so the app behaves identically on
-non-touch hardware. The dot in the header is white while data is fresh and turns
-red once nothing has arrived for 50 seconds.
+**Two ways to get data** — polls the printer's web API, or subscribes to MQTT
+if you have a broker. Picks automatically and falls back on its own.
+
+**Runs on all seven Pebbles** — aplite, basalt, chalk, diorite, emery, flint,
+gabbro. The layout rescales from 144×168 to 260×260 round, and the palette
+collapses to black-on-white on the monochrome watches.
+
+**Gentle on the printer** — polls every 20 s while printing, backs off to every
+3 minutes when idle. The printer's single ESP32 serves its dashboard in the gaps
+between layer moves, so there's nothing to gain from asking harder.
 
 ## Setup
 
-Open the app's settings in the Pebble phone app.
+Open the app's settings in the Pebble phone app and set **Printer host** to
+`tinymaker.local` (or its IP). That's it — the app finds the status endpoint
+itself. Your phone needs to be on the same WiFi as the printer.
 
-**Dashboard polling (works out of the box).** Set **Printer host** to
-`tinymaker.local` (or the printer's IP). Leave **Status path** blank — the app
-finds `/api/status` itself and re-probes if a firmware update moves it. The
-phone must be on the same WiFi as the printer.
+For MQTT instead: enable it on the printer, give your broker a **WebSocket**
+listener (Mosquitto: `listener 9001` + `protocol websockets` — PebbleKit JS
+can't reach port 1883), and enter `ws://<broker>:9001`. The app reads the
+printer's Home Assistant auto-discovery configs to work out the topics itself.
 
-**MQTT (optional, needs setup).** TinyMakerWifi ships with MQTT *disabled*, so
-this path needs work on your side first:
+## Limitations
 
-1. Enable MQTT on the printer and point it at a broker.
-2. Give that broker a **WebSocket** listener — PebbleKit JS cannot open a raw
-   TCP connection, so the printer's port 1883 is not reachable from the phone.
-   In Mosquitto that is `listener 9001` + `protocol websockets`.
-3. Enter `ws://<broker>:9001` as the **Broker WebSocket URL**.
+**The app has to be open.** PebbleKit JS only runs while the watchapp is in the
+foreground, so nothing is polled — and no vibration fires — once you exit.
 
-The app then reads the printer's Home Assistant auto-discovery configs to learn
-which topics carry which values, rather than hard-coding topic names.
+For alerts when you're not watching, use the printer's own notifications:
+**tinymaker.local → Settings → Notifications** sends you a Telegram, WhatsApp or
+Discord message when a print finishes, pauses for low resin, or is cancelled.
+Those arrive on your phone and forward to your Pebble automatically. Use this
+app for *checking on* the print; use those for *being told about* it.
 
-With **Source** left on *Auto*, it tries MQTT and silently falls back to
-dashboard polling — so leaving the broker URL blank just uses the dashboard.
-
-**Update cadence** defaults to every 20 s while printing and every 3 minutes
-while idle. The printer's ESP32 serves its dashboard in the gaps between layer
-moves, so there is nothing to gain from polling harder.
-
-## Testing without a print
-
-`scripts/mock-printer.js` serves the same JSON shapes as the real firmware and
-can be driven into states a real print rarely reaches on demand:
+## Build
 
 ```bash
-node scripts/mock-printer.js --scenario lowresin --port 8080
-```
-
-Scenarios: `print` (default), `idle`, `lowresin`, `finish`, `cancel`,
-`powerloss`. Each triggers 20 seconds in, so there is time to open the app and
-watch the transition. Point **Printer host** at `<this machine>:8080`.
-
-## Building
-
-```bash
-npm install                                # @rebble/clay for the settings UI
+npm install
 pebble build
 pebble install --emulator emery
-pebble screenshot --no-open --emulator emery screenshot_emery.png
-pebble install --phone 192.168.0.228       # real hardware
+pebble install --phone <your-phone-ip>
 ```
 
-Builds for all seven platforms: aplite, basalt, chalk, diorite, emery, flint,
-gabbro. The layout scales from a 144×168 aplite to a 260×260 round gabbro, and
-the palette collapses to black-on-white on the monochrome watches.
+No printer handy? `node scripts/mock-printer.js --scenario lowresin` serves the
+same JSON the firmware does and can be driven into `print`, `idle`, `lowresin`,
+`finish`, `cancel` or `powerloss` on demand. Icons and store assets regenerate
+with `python3 scripts/make-icons.py`.
 
-## Deviations from the plan
+## Docs
 
-Worth knowing if you are reading `docs/PLAN.md` alongside the code:
+- [`docs/PLAN.md`](docs/PLAN.md) — the project plan this was built to
+- [`docs/API-NOTES.md`](docs/API-NOTES.md) — the printer's API, reverse-engineered
+  against a live print on firmware 0.16.2, including the field traps that bite
+  anyone parsing it
 
-- **The data-source priority is inverted.** The plan made MQTT primary and
-  dashboard polling the fallback. MQTT ships disabled on firmware 0.16.2, so
-  polling is what actually works today. Both are implemented.
-- **Five AppMessage keys were added** to section 6's schema: `ELAPSED_SEC` and
-  `RESIN_USED_ML` (the firmware reports both, and the finished-print summary
-  needs them), `CONN_STATE` and `CONN_MSG` (so the watch can tell "nothing is
-  printing" apart from "the phone can't reach the printer"), and
-  `REQUEST_REFRESH` (the watch-to-phone direction the plan's Select/tap refresh
-  implies).
-- **Two accent colours moved one step in the palette** so the progress fill and
-  the low-resin warning stay distinguishable — reasoning in `docs/PLAN.md` §4.
-- **The two screens share one window** rather than being separate windows, so
-  paging is instant; `status_window.c` and `resin_window.c` keep the plan's file
-  names and each render one page.
-- **`ha_discovery.js` was split out** of `mqtt_client.js`, which the plan listed
-  as owning "topic parsing" — the MQTT wire protocol and Home Assistant's
-  discovery conventions are unrelated concerns.
-
-## Status
-
-Verified end-to-end against a live print on all display tiers in the emulator
-(emery, gabbro, chalk, basalt, aplite). Plan section 7's last item — a full
-print monitored on watch hardware — is still outstanding, as is anything MQTT,
-which cannot be exercised until a broker exists.
+Verified end-to-end against a live print on emery, gabbro, chalk, basalt and
+aplite. MQTT is implemented but untested — the firmware ships with it disabled,
+so there was no broker to try it against.
